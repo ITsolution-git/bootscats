@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$current_branch" != "master" ]; then
+    git add -A
+    git commit -am "Interview complete" || true
+    git checkout master
+fi
+
+read -p "Candidate first name:" branch_name
+git checkout -b "interview--$(date +%s)-$branch_name"
+
+read -p "Enter a new password for the code server:" server_password
+sudo docker rm --force interviewing-code-server
+sudo docker create --restart unless-stopped -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu/project:/home/coder/project-p "8080:8080" --cap-add=SYS_PTRACE code-server:academia --verbose
+sudo docker start interviewing-code-server
+
+echo "Server restarted with new password. Everything should be clean!"

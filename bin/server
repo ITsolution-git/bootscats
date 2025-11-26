@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+var Server = require('../servers/node/obfuscated_server');
+
+// INTERVIEW CANDIDATE, DO NOT REMOVE THESE THREE LINES:
+console.log = function(){
+  // noop
+};
+
+new Server(process.argv[2]).start();

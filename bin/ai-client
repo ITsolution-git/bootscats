@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+AiClient = require('../clients/ai_client')
+
+new AiClient(process.argv[2]).start();

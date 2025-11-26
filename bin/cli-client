@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+CliClient = require('../clients/cli_client')
+
+new CliClient(process.argv[2]).start();
