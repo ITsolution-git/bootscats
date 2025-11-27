@@ -14,8 +14,11 @@ read -p "Candidate first name:" branch_name
 git checkout -b "interview--$(date +%s)-$branch_name"
 
 read -p "Enter a new password for the code server:" server_password
-sudo docker rm --force interviewing-code-server
-sudo docker create --restart unless-stopped -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu/project:/home/coder/project-p "8080:8080" --cap-add=SYS_PTRACE code-server:academia --verbose
+
+sudo docker rm --force interviewing-code-server || true
+sudo docker create --restart unless-stopped -e "PASSWORD=$server_password" -e "PROXY_DOMAIN=interviews.academia.z0o.us" --name "interviewing-code-server" -v /home/ubuntu/project:/home/coder/project -p 8080:8080 --cap-add=SYS_PTRACE code-server:academia --verbose
+
+
 sudo docker start interviewing-code-server
 
 echo "Server restarted with new password. Everything should be clean!"
