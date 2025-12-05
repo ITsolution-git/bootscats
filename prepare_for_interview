@@ -1,24 +1,33 @@
-#!/usr/bin/env bash
+      #!/usr/bin/env bash
 
-set -e
+      set -e
 
-current_branch="$(git rev-parse --abbrev-ref HEAD)"
+      current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
-if [ "$current_branch" != "master" ]; then
-    git add -A
-    git commit -am "Interview complete" || true
-    git checkout master
-fi
+      if [ "$current_branch" != "master" ]; then
+          git add -A
+          git commit -am "Interview complete" || true
+          git checkout master
+      fi
 
-read -p "Candidate first name:" branch_name
-git checkout -b "interview--$(date +%s)-$branch_name"
+      read -p "Candidate first name:" branch_name
+      git checkout -b "interview--$(date +%s)-$branch_name"
 
-read -p "Enter a new password for the code server:" server_password
+      read -p "Enter a new password for the code server:" server_password
 
-sudo docker rm --force interviewing-code-server || true
-sudo docker create --restart unless-stopped -e "PASSWORD=$server_password" -e "PROXY_DOMAIN=interviews.academia.z0o.us" --name "interviewing-code-server" -v /home/ubuntu/project:/home/coder/project -p 8080:8080 --cap-add=SYS_PTRACE code-server:academia --verbose
+      # Stop and remove existing container
+      sudo docker stop interviewing-code-server || true
+      sudo docker rm --force interviewing-code-server || true
 
+      # Wait a moment for ports to be released
+      sleep 1
 
-sudo docker start interviewing-code-server
+      # Ensure persistent home directory exists for Claude Code authentication
+      sudo mkdir -p /var/lib/code-server
+      sudo chown -R 1000:1000 /var/lib/code-server || true
 
-echo "Server restarted with new password. Everything should be clean!"
+      # Use host network mode so container can bind to 7535 directly
+      # Note: This means the container shares the host's network namespace
+      sudo docker create --restart unless-stopped --network host -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu:/home/coder --cap-add=SYS_PTRACE code-server:academia --verbose
+
+      sudo docker start interviewing-code-server
