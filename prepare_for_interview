@@ -1,33 +1,56 @@
-      #!/usr/bin/env bash
+#!/usr/bin/env bash
 
-      set -e
+set -e
 
-      current_branch="$(git rev-parse --abbrev-ref HEAD)"
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
-      if [ "$current_branch" != "master" ]; then
-          git add -A
-          git commit -am "Interview complete" || true
-          git checkout master
-      fi
+if [ "$current_branch" != "master" ]; then
+    git add -A
+    git commit -am "Interview complete" || true
+    git checkout master
+fi
 
-      read -p "Candidate first name:" branch_name
-      git checkout -b "interview--$(date +%s)-$branch_name"
+read -p "Candidate first name:" branch_name
+git checkout -b "interview--$(date +%s)-$branch_name"
 
-      read -p "Enter a new password for the code server:" server_password
+read -p "Enter a new password for the code server:" server_password
 
-      # Stop and remove existing container
-      sudo docker stop interviewing-code-server || true
-      sudo docker rm --force interviewing-code-server || true
+sudo docker rm --force interviewing-code-server || true
 
-      # Wait a moment for ports to be released
-      sleep 1
+# Ensure directories exist and have correct permissions
+# Mount only necessary directories to preserve authentication and configuration while excluding bash history and chat history
+# Ensure code-server globalStorage directory structure exists for extension authentication
+sudo mkdir -p /home/ubuntu/.config
+sudo mkdir -p /home/ubuntu/.local/share/code-server/User/globalStorage
+sudo mkdir -p /home/ubuntu/.claude
+sudo mkdir -p /home/ubuntu/.codex
+sudo mkdir -p /home/ubuntu/.npm
+sudo mkdir -p /home/ubuntu/.cache
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.config || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.local || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.claude || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.codex || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.npm || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.cache || true
+# Ensure .claude.json files exist (create empty if they don't to allow mounting)
+sudo touch /home/ubuntu/.claude.json /home/ubuntu/.claude.json.backup || true
+sudo chown ubuntu:ubuntu /home/ubuntu/.claude.json /home/ubuntu/.claude.json.backup || true
 
-      # Ensure persistent home directory exists for Claude Code authentication
-      sudo mkdir -p /var/lib/code-server
-      sudo chown -R 1000:1000 /var/lib/code-server || true
+# Use host network mode so container can bind to 7535 directly
+# Note: This means the container shares the host's network namespace
+# Mount only necessary directories/files:
+# - .config: CLI credentials (~/.config/claude/credentials), code-server config, and extension auth (~/.config/claude-code/auth.json)
+# - .local: code-server extensions and globalStorage (extension logins at ~/.local/share/code-server/User/globalStorage)
+# - .claude: Claude extension directory data (config, but not chat history)
+# - .claude.json/.claude.json.backup: Claude configuration files in home root
+# - .codex: Codex extension data
+# - .npm: Global npm packages
+# - .cache: Extension cache data (some extensions store auth tokens here)
+# - project: Project files
+# Override chat history files/directories to prevent persistence:
+# - .claude/history.jsonl -> /dev/null (chat history index)
+# - .claude/projects -> tmpfs (chat history transcripts, cleared on container restart)
+# This prevents bash history and chat history from persisting while preserving authentication
+sudo docker create --restart unless-stopped --network host -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu/.config:/home/coder/.config -v /home/ubuntu/.local:/home/coder/.local -v /home/ubuntu/.claude:/home/coder/.claude -v /dev/null:/home/coder/.claude/history.jsonl --tmpfs /home/coder/.claude/projects -v /home/ubuntu/.claude.json:/home/coder/.claude.json -v /home/ubuntu/.claude.json.backup:/home/coder/.claude.json.backup -v /home/ubuntu/.codex:/home/coder/.codex -v /home/ubuntu/.npm:/home/coder/.npm -v /home/ubuntu/.cache:/home/coder/.cache -v /home/ubuntu/project:/home/coder/project --cap-add=SYS_PTRACE code-server:academia --verbose
 
-      # Use host network mode so container can bind to 7535 directly
-      # Note: This means the container shares the host's network namespace
-      sudo docker create --restart unless-stopped --network host -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu:/home/coder --cap-add=SYS_PTRACE code-server:academia --verbose
-
-      sudo docker start interviewing-code-server
+sudo docker start interviewing-code-server
