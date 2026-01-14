@@ -17,40 +17,45 @@ read -p "Enter a new password for the code server:" server_password
 
 sudo docker rm --force interviewing-code-server || true
 
+# Clear Claude Code chat history before starting new interview
+# This ensures each interview starts with a clean chat history while preserving authentication
+sudo rm -rf /home/ubuntu/.claude/projects || true
+sudo rm -f /home/ubuntu/.claude/history.jsonl || true
+
 # Ensure directories exist and have correct permissions
-# Mount only necessary directories to preserve authentication and configuration while excluding bash history and chat history
-# Ensure code-server globalStorage directory structure exists for extension authentication
+# Mount only necessary directories to preserve authentication and configuration while excluding bash history
 sudo mkdir -p /home/ubuntu/.config
 sudo mkdir -p /home/ubuntu/.local/share/code-server/User/globalStorage
 sudo mkdir -p /home/ubuntu/.claude
 sudo mkdir -p /home/ubuntu/.codex
 sudo mkdir -p /home/ubuntu/.npm
 sudo mkdir -p /home/ubuntu/.cache
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.config || true
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.local || true
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.claude || true
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.codex || true
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.npm || true
-sudo chown -R ubuntu:ubuntu /home/ubuntu/.cache || true
+# Ensure directories are owned by UID 1000 (coder user in container) and are writable
+sudo chown -R 1000:1000 /home/ubuntu/.config || true
+sudo chown -R 1000:1000 /home/ubuntu/.local || true
+sudo chown -R 1000:1000 /home/ubuntu/.claude || true
+sudo chown -R 1000:1000 /home/ubuntu/.codex || true
+sudo chown -R 1000:1000 /home/ubuntu/.npm || true
+sudo chown -R 1000:1000 /home/ubuntu/.cache || true
 # Ensure .claude.json files exist (create empty if they don't to allow mounting)
 sudo touch /home/ubuntu/.claude.json /home/ubuntu/.claude.json.backup || true
-sudo chown ubuntu:ubuntu /home/ubuntu/.claude.json /home/ubuntu/.claude.json.backup || true
+sudo chown 1000:1000 /home/ubuntu/.claude.json /home/ubuntu/.claude.json.backup || true
 
 # Use host network mode so container can bind to 7535 directly
 # Note: This means the container shares the host's network namespace
 # Mount only necessary directories/files:
 # - .config: CLI credentials (~/.config/claude/credentials), code-server config, and extension auth (~/.config/claude-code/auth.json)
 # - .local: code-server extensions and globalStorage (extension logins at ~/.local/share/code-server/User/globalStorage)
-# - .claude: Claude extension directory data (config, but not chat history)
+# - .claude: Claude extension directory data (chat history cleared above, will be recreated in container)
 # - .claude.json/.claude.json.backup: Claude configuration files in home root
 # - .codex: Codex extension data
 # - .npm: Global npm packages
 # - .cache: Extension cache data (some extensions store auth tokens here)
 # - project: Project files
-# Override chat history files/directories to prevent persistence:
-# - .claude/history.jsonl -> /dev/null (chat history index)
-# - .claude/projects -> tmpfs (chat history transcripts, cleared on container restart)
-# This prevents bash history and chat history from persisting while preserving authentication
-sudo docker create --restart unless-stopped --network host -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu/.config:/home/coder/.config -v /home/ubuntu/.local:/home/coder/.local -v /home/ubuntu/.claude:/home/coder/.claude -v /dev/null:/home/coder/.claude/history.jsonl --tmpfs /home/coder/.claude/projects -v /home/ubuntu/.claude.json:/home/coder/.claude.json -v /home/ubuntu/.claude.json.backup:/home/coder/.claude.json.backup -v /home/ubuntu/.codex:/home/coder/.codex -v /home/ubuntu/.npm:/home/coder/.npm -v /home/ubuntu/.cache:/home/coder/.cache -v /home/ubuntu/project:/home/coder/project --cap-add=SYS_PTRACE code-server:academia --verbose
+# Override bash history to prevent persistence:
+# - .bash_history -> /dev/null (prevents bash history from persisting)
+# Chat history is cleared above before container starts, so it won't persist between interviews
+sudo docker create --restart unless-stopped --network host -e "PASSWORD=$server_password" --name "interviewing-code-server" -v /home/ubuntu/.config:/home/coder/.config -v /home/ubuntu/.local:/home/coder/.local -v /home/ubuntu/.claude:/home/coder/.claude -v /home/ubuntu/.claude.json:/home/coder/.claude.json -v /home/ubuntu/.claude.json.backup:/home/coder/.claude.json.backup -v /home/ubuntu/.codex:/home/coder/.codex -v /home/ubuntu/.npm:/home/coder/.npm -v /home/ubuntu/.cache:/home/coder/.cache -v /home/ubuntu/project:/home/coder/project -v /dev/null:/home/coder/.bash_history --cap-add=SYS_PTRACE code-server:academia --verbose
 
 sudo docker start interviewing-code-server
+
