@@ -2,12 +2,52 @@
 
 set -e
 
+# Remove all nested git repositories while preserving the root repository
+# Git ignores any nested repos and treats the entire folder as if it's git ignored.
+# If a candidate creates a nested repo in one of the folders it will be ignored
+# Git doesn't provide a way of disabling this, so we'll delete the .git folders manually
+# This was written by Claude
+echo "Searching for nested git repositories..."
+
+# Count how many we find
+count=0
+
+# Find and remove nested .git directories (mindepth 2 skips the root .git)
+while IFS= read -r -d '' git_dir; do
+    echo "  Removing: $git_dir"
+    rm -rf "$git_dir"
+    count=$((count + 1))
+done < <(find . -mindepth 2 -name ".git" -type d -print0 2>/dev/null)
+
+# Find and remove nested .git files (used by submodules/worktrees)
+while IFS= read -r -d '' git_file; do
+    echo "  Removing: $git_file"
+    rm -f "$git_file"
+    count=$((count + 1))
+done < <(find . -mindepth 2 -name ".git" -type f -print0 2>/dev/null)
+
+if [ $count -eq 0 ]; then
+    echo "No nested git repositories found."
+else
+    echo "Removed $count nested git repositor(y|ies)."
+fi
+
+# After removing .git directories, reset git's cache for those directories
+find . -mindepth 2 -type d | while read dir; do
+    # Check if directory has files but git thinks it's empty/ignored
+    if [ "$(ls -A "$dir" 2>/dev/null)" ] && ! git ls-files --error-unmatch "$dir" >/dev/null 2>&1; then
+        git rm -rf --cached "$dir" 2>/dev/null || true
+        git add "$dir" 2>/dev/null || true
+    fi
+done
+
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
 if [ "$current_branch" != "master" ]; then
     git add -A
     git commit -am "Interview complete" || true
     git checkout master
+    git reset HEAD --hard
 fi
 
 read -p "Candidate first name:" branch_name
