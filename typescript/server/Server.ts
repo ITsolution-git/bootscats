@@ -15,7 +15,12 @@ export class Server {
       
       c.send(createMessageEvent(`Connected to B/C Server at ${sock.localAddress}:${port}`));
 
-      this.maybeStartGame();
+      // If there's an active game, add this client to it
+      if (this.currentGame && this.currentGame.isActive()) {
+        this.currentGame.clientJoined(c);
+      } else {
+        this.maybeStartGame();
+      }
 
       sock.on('data', buf => {
         const said = buf.toString().trim();
@@ -25,13 +30,23 @@ export class Server {
       })
 
       sock.on('error', () => {
-        // TODO
+        if (this.currentGame) {
+          this.currentGame.clientDisconnected(c);
+        }
+        this.clients.delete(c.id);
+      })
+
+      sock.on('close', () => {
+        // Only notify game if it's still active
+        // (if game already ended, this client was already removed)
+        if (this.currentGame && this.currentGame.isActive()) {
+          this.currentGame.clientDisconnected(c);
+        }
+        this.clients.delete(c.id);
       })
     })
 
-    server.listen(port, '127.0.0.1', () => {
-      console.log('Server started');
-    })
+    server.listen(port, '127.0.0.1')
   }
 
   idleClients(): Client[] {
@@ -53,9 +68,14 @@ export class Server {
   }
 
   gameEnded(winner: Client) {
-    this.clients = new Map<string, Client>;
-    this.clients.set(winner.id, winner);
-
+    // Prevent multiple calls - if currentGame is already null, we've already processed this
+    if (!this.currentGame) {
+      return;
+    }
+    
+    // Don't destroy the clients map - let players stay connected for next game
+    // Just reset the current game and try to start a new one
+    
     this.currentGame = null;
     this.maybeStartGame();
   }

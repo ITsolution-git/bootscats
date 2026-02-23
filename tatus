@@ -1,0 +1,59 @@
+[33mcommit d740ef1c5ff2ed507b520812533d85c3d0f8ec78[m[33m ([m[1;36mHEAD -> [m[1;32minterview--1771866109-brendan[m[33m, [m[1;31morigin/interview--1771866109-brendan[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Yitao Hu <hi@selfreason.com>
+Date:   Mon Feb 23 20:06:20 2026 +0000
+
+    changes
+
+[33mcommit ea579eea621af4f6e5c8966029db9551488694e2[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Sat Jan 31 01:17:04 2026 +0000
+
+    Delete nested git repos in prepare script
+
+[33mcommit 4d8498bcfc936b4dfe9d8230e090d12d16ff3735[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Wed Jan 14 00:20:25 2026 +0000
+
+    Fix claude code permissions + chat history
+
+[33mcommit 6ee91b78a7eddc5cba316fbcb9b9447e294fb105[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Wed Jan 14 00:19:36 2026 +0000
+
+    Fix weird ts-node issue
+
+[33mcommit 2cb9e03eb0dfe9425e1a2f92ec04344f5356443e[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Thu Dec 18 01:23:50 2025 +0000
+
+    Update prepare_for_interview script
+
+[33mcommit df0b03e0169c0e5f999ec746c6dbfab34e0df71f[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Fri Dec 5 19:36:07 2025 +0000
+
+    Expose port 7535 for remote access
+
+[33mcommit 1084679e3efe194394ecfb5c2f9bd05730972dc1[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Sun Nov 30 23:50:08 2025 +0000
+
+    Typescript net
+
+[33mcommit 7c48a8e9f2151d97b1909addb3630a5c9d8bc437[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Sun Nov 30 23:36:46 2025 +0000
+
+    Typescript
+
+[33mcommit 164131b8b6dbd64381356a7efde1c2033276e75f[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Thu Nov 27 00:45:50 2025 +0000
+
+    Fixes
+
+[33mcommit 14fd690ccccea04727902be3ba6f7725c92aa429[m
+Author: Ubuntu <ubuntu@ip-10-0-0-243.us-west-2.compute.internal>
+Date:   Wed Nov 26 22:47:56 2025 +0000
+
+    Initial setup
