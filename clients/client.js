@@ -32,6 +32,7 @@ class Client {
   handle_data(data) {
     data.split('\n').forEach(line => {
       if(!line.match(/^\s*$/)) {
+        console.log("Handle Data", line);
         this.handle_message(JSON.parse(line))
       }
     })

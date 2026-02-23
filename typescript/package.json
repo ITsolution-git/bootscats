@@ -1,9 +1,15 @@
 {
+  "scripts": {
+    "start": "nodemon --exec ts-node server.ts"
+  },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "net": "^1.0.2",
     "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "nodemon": "^3.1.14"
   }
 }

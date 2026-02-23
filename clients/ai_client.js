@@ -17,7 +17,6 @@ class AiClient extends Client {
     }
   }
 
-
   handle_event(event) {
     switch(event) {
       case 'start':
