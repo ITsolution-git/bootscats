@@ -50,14 +50,18 @@ export class Server {
   }
 
   idleClients(): Client[] {
-    return Array.from(this.clients.values());
+    // Return clients sorted by join time (earliest first)
+    return Array.from(this.clients.values())
+      .sort((a, b) => a.joinedAt - b.joinedAt);
   }
 
   maybeStartGame() {
     if (this.currentGame && this.currentGame.isActive()) return;
     const idle = this.idleClients();
+    console.log(`maybeStartGame: ${idle.length} idle clients`);
     if (idle.length > 1) {
       const players = idle;
+      console.log('Creating new game with players:', players.map(p => p.id));
       this.currentGame = new Game(players, (p) => this.gameEnded(p));
       this.currentGame.start();
     } else {

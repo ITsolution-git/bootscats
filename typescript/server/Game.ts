@@ -6,6 +6,7 @@ export class Game {
   private turnIdx = 0;
   private currentNumber: number | null = null;
   private active = true;
+  private gameEnded = false; // Prevent multiple endGame calls
   private onGameEnd: (winner: Client) => void;
   private clientIdWonGame: string | null = null;
   private turnTimeout: NodeJS.Timeout | null = null;
@@ -71,10 +72,13 @@ export class Game {
   }
 
   private endGame() {
-    // Prevent multiple calls to endGame
-    if (!this.active) {
+    // Prevent multiple calls to endGame - use dedicated flag
+    if (this.gameEnded) {
+      console.error('endGame called multiple times! Ignoring.');
       return false;
     }
+    this.gameEnded = true;
+    console.log('endGame: Sending win event to winner');
     
     if (this.players.length > 1) {
       throw new Error('EndGame - incorrect behavior');
@@ -91,6 +95,7 @@ export class Game {
     if (winner) {
       this.clientIdWonGame = winner.id;
       this.sendMessage(winner, createEvtEvent('win'));
+      console.log('Win event sent');
     } else {
       // No winner, everyone loses
       this.broadcastEvent(createEvtEvent('lose'));
@@ -99,6 +104,7 @@ export class Game {
     // Clear players array so they're not tracked by this game anymore
     this.players = [];
 
+    console.log('Calling onGameEnd callback');
     // Notify server that game ended
     this.onGameEnd(winner);
     return true
